@@ -1,0 +1,17 @@
+{
+  "name": "push-notification-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "generate-vapid": "node src/generate-vapid.js"
+  },
+  "dependencies": {
+    "@azure/notification-hubs": "^2.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "web-push": "^3.6.7"
+  }
+}
