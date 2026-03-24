@@ -13,6 +13,7 @@ from typing import Any
 import httpx
 
 from .auth import create_sas_token, parse_connection_string
+from .notifications import JSON_CONTENT_TYPE
 
 logger = logging.getLogger("nh.client")
 
@@ -123,9 +124,20 @@ class NotificationHubsClient:
     ) -> dict:
         url = self._request_url("/messages")
         headers = self._create_headers()
+
+        # Platform format header
         headers["ServiceBusNotification-Format"] = notification.get(
             "platform", "browser"
         )
+
+        # Content type from notification (supports all platforms)
+        content_type = notification.get("contentType", JSON_CONTENT_TYPE)
+        headers["Content-Type"] = content_type
+
+        # Platform-specific headers (e.g. X-WNS-Type for Windows)
+        notif_headers = notification.get("headers", {})
+        for k, v in notif_headers.items():
+            headers[k] = v
 
         if tag_expression:
             headers["ServiceBusNotification-Tags"] = tag_expression
@@ -138,8 +150,10 @@ class NotificationHubsClient:
 
         body = notification.get("body", "")
 
+        platform = notification.get("platform", "unknown")
         logger.info(
-            f"POST /messages | tags={tag_expression} ttl={ttl} urgency={urgency}"
+            f"POST /messages | platform={platform} tags={tag_expression} "
+            f"ttl={ttl} urgency={urgency}"
         )
         logger.debug(f"Body: {body}")
 
@@ -174,7 +188,12 @@ class NotificationHubsClient:
         headers["ServiceBusNotification-Format"] = notification.get(
             "platform", "browser"
         )
+        headers["Content-Type"] = notification.get("contentType", JSON_CONTENT_TYPE)
         headers["ServiceBusNotification-ScheduleTime"] = scheduled_time.isoformat()
+
+        # Platform-specific headers
+        for k, v in notification.get("headers", {}).items():
+            headers[k] = v
 
         if tag_expression:
             headers["ServiceBusNotification-Tags"] = tag_expression
